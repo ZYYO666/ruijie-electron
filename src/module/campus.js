@@ -20,8 +20,8 @@ async function getCampusAuthInfo() {
         });
         const content = response.data.toString();
         // 解析重定向链接
-        
-        
+
+
         const redirectUrl = parseRedirectUrl(content);
         if (!redirectUrl) {
             throw new Error('未检测到校园网认证页面重定向');
