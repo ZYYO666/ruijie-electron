@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>校园网认证工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* 隐藏所有滚动条 */
+        ::-webkit-scrollbar {
+            display: none;
+        }
+
+        * {
+            -ms-overflow-style: none;
+            /* IE and Edge */
+            scrollbar-width: none;
+            /* Firefox */
+        }
+
+        html,
+        body {
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'SF Pro Display', 'Helvetica Neue', sans-serif;
+            background: #000000;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            font-size: 14px;
+            color: #ffffff;
+            font-weight: 300;
+            
+        }
+
+        /* 自定义标题栏样式 */
+        .custom-titlebar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 48px;
+            background: #1a1a1a;
+            border-bottom: 1px solid #333333;
+            -webkit-app-region: no-drag;
+            user-select: none;
+            position: relative;
+            z-index: 1000;
+            
+        }
+
+        .titlebar-drag-region {
+            flex: 1;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            padding-left: 12px;
+            -webkit-app-region: drag;
+        }
+
+        .titlebar-title {
+            font-size: 18px;
+            font-weight: 500;
+            color: #ffffff;
+            opacity: 0.8;
+        }
+
+        .titlebar-controls {
+            display: flex;
+            height: 100%;
+            -webkit-app-region: no-drag;
+        }
+
+        .titlebar-button {
+            width: 46px;
+            height: 32px;
+            border: none;
+            background: transparent;
+            color: #ffffff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s ease;
+            outline: none;
+        }
+
+        .titlebar-button:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .titlebar-button.close-btn:hover {
+            background: #e81123;
+            color: #ffffff;
+        }
+
+        .titlebar-button svg {
+            opacity: 0.8;
+            pointer-events: none;
+        }
+
+        .titlebar-button:hover svg {
+            opacity: 1;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            font-size: 13px;
+            color: #ffffff;
+            font-weight: 400;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .status-running .status-dot {
+            background: #ffffff;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        .status-stopped .status-dot {
+            background: #666666;
+            border: 1px solid #999999;
+        }
+
+        .container {
+            display: flex;
+            flex: 1;
+            background: #000000;
+            min-height: 0;
+            border-top: 1px solid #333333;
+        }
+
+        .config-panel {
+            width: 300px;
+            max-width: 300px;
+            min-width: 280px;
+            background: #111111;
+            border-right: 1px solid #333333;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            overflow-y: hidden;
+            overflow-x: hidden;
+            box-sizing: border-box;
+            height: 100%;
+        }
+
+        .config-form {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            padding-bottom: 10px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-shrink: 0;
+            position: sticky;
+            bottom: 0;
+            background: #111111;
+            padding: 15px 0 20px 0;
+            border-top: 1px solid #333333;
+            margin-left: -20px;
+            margin-right: -20px;
+            padding-left: 20px;
+            padding-right: 20px;
+        }
+
+        .log-panel {
+            flex: 1;
+            background: #000000;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            overflow: hidden;
+            box-sizing: border-box;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 400;
+            color: #ffffff;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #333333;
+            border-radius: 6px;
+            font-size: 13px;
+            background: #000000;
+            color: #ffffff;
+            transition: all 0.3s ease;
+            font-weight: 300;
+            box-sizing: border-box;
+        }
+
+        .form-group input::placeholder {
+            color: #666666;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #ffffff;
+            background: #111111;
+        }
+
+        .form-group input[type="password"] {
+            font-family: 'SF Mono', 'Monaco', 'Menlo', 'Consolas', monospace;
+            letter-spacing: 2px;
+        }
+
+        .form-group small {
+            color: #999999;
+            font-size: 11px;
+            margin-top: 4px;
+            display: block;
+            font-weight: 300;
+        }
+
+        /* 开关样式 */
+        .switch-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+        }
+
+        .switch-input {
+            display: none;
+        }
+
+        .switch-label {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+            background: #333333;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid #555555;
+        }
+
+        .switch-slider {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 18px;
+            height: 18px;
+            background: #666666;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .switch-input:checked + .switch-label {
+            background: #ffffff;
+            border-color: #ffffff;
+        }
+
+        .switch-input:checked + .switch-label .switch-slider {
+            transform: translateX(20px);
+            background: #000000;
+        }
+
+        .switch-text {
+            color: #cccccc;
+            font-size: 12px;
+            font-weight: 300;
+        }
+
+        .switch-input:checked ~ .switch-text {
+            color: #ffffff;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 10px 14px;
+            border: 1px solid #ffffff;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 400;
+            cursor: pointer;
+            background: transparent;
+            color: #ffffff;
+            transition: all 0.3s ease;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            box-sizing: border-box;
+            min-height: 44px;
+            white-space: nowrap;
+        }
+
+        .btn:hover {
+            background: #ffffff;
+            color: #000000;
+        }
+
+        .btn-primary {
+            background: #ffffff;
+            color: #000000;
+            border-color: #ffffff;
+        }
+
+        .btn-primary:hover {
+            background: transparent;
+            color: #ffffff;
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: #999999;
+            border-color: #666666;
+        }
+
+        .btn-secondary:hover {
+            background: #666666;
+            color: #ffffff;
+            border-color: #666666;
+        }
+
+        .btn-danger {
+            background: transparent;
+            color: #ffffff;
+            border-color: #ffffff;
+        }
+
+        .btn-danger:hover {
+            background: #ffffff;
+            color: #000000;
+        }
+
+        .log-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #333333;
+        }
+
+        .log-header h3 {
+            color: #ffffff;
+            font-size: 16px;
+            font-weight: 300;
+            letter-spacing: 1px;
+        }
+
+        .log-content {
+            flex: 1;
+            overflow-y: auto;
+            font-size: 12px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            background: #111111;
+            border: 1px solid #333333;
+            border-radius: 0;
+            padding: 16px;
+            font-family: 'SF Mono', 'Monaco', 'Menlo', 'Consolas', monospace;
+            color: #ffffff;
+            font-weight: 300;
+        }
+
+        .log-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .log-content::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .log-content::-webkit-scrollbar-thumb {
+            background: #333333;
+            border-radius: 0;
+        }
+
+        .log-content::-webkit-scrollbar-thumb:hover {
+            background: #666666;
+        }
+
+        .config-title {
+            font-size: 16px;
+            font-weight: 300;
+            color: #ffffff;
+            margin-bottom: 20px;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            border-bottom: 1px solid #333333;
+            padding-bottom: 10px;
+        }
+
+        /* 添加一些微妙的动画效果 */
+        .form-group input,
+        .btn {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* 为整个应用添加微妙的网格背景 */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 20px 20px;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        /* 模态框样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background-color: #111111;
+            margin: 5% auto;
+            padding: 0;
+            border: 1px solid #333333;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+            animation: modalFadeIn 0.3s ease-out;
+        }
+
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 25px;
+            border-bottom: 1px solid #333333;
+            background: #0a0a0a;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .modal-header h2 {
+            color: #ffffff;
+            font-size: 18px;
+            font-weight: 400;
+            margin: 0;
+            letter-spacing: 0.5px;
+        }
+
+        .close {
+            color: #999999;
+            font-size: 24px;
+            font-weight: 300;
+            cursor: pointer;
+            transition: color 0.3s ease;
+            line-height: 1;
+        }
+
+        .close:hover {
+            color: #ffffff;
+        }
+
+        .modal-body {
+            padding: 25px;
+        }
+
+        .about-section {
+            margin-bottom: 25px;
+        }
+
+        .about-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .about-section h3 {
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 400;
+            margin-bottom: 12px;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid #333333;
+            padding-bottom: 8px;
+        }
+
+        .about-section p {
+            color: #cccccc;
+            font-size: 13px;
+            line-height: 1.6;
+            margin-bottom: 8px;
+            font-weight: 300;
+        }
+
+        .about-section p:last-child {
+            margin-bottom: 0;
+        }
+
+        .about-section strong {
+            color: #ffffff;
+            font-weight: 400;
+        }
+
+        .about-section a {
+            color: #ffffff;
+            text-decoration: none;
+            border-bottom: 1px solid #666666;
+            transition: all 0.3s ease;
+        }
+
+        .about-section a:hover {
+            border-bottom-color: #ffffff;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- 自定义标题栏 -->
+    <div class="custom-titlebar">
+        <div class="titlebar-drag-region">
+            <div class="titlebar-title">校园网认证工具</div>
+        </div>
+        <div class="titlebar-controls">
+            <button class="titlebar-button minimize-btn" id="minimizeBtn">
+                <svg width="12" height="12" viewBox="0 0 12 12">
+                    <rect x="2" y="5" width="8" height="2" fill="currentColor"/>
+                </svg>
+            </button>
+            <button class="titlebar-button close-btn" id="closeBtn">
+                <svg width="12" height="12" viewBox="0 0 12 12">
+                    <path d="M2 2L10 10M10 2L2 10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- 配置面板 -->
+        <div class="config-panel">
+            <h2 class="config-title">网络配置</h2>
+
+            <div class="config-form">
+                <form id="configForm">
+                    <div class="form-group">
+                        <label for="serverUrl">服务器地址 (Server URL)</label>
+                        <input type="text" id="serverUrl" placeholder="172.16.200.101">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="username">用户名 (Username)</label>
+                        <input type="text" id="username" placeholder="请输入用户名" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">密码 (Password)</label>
+                        <input type="password" id="password" placeholder="请输入密码" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="checkInterval">检测间隔 (秒)</label>
+                        <input type="number" id="checkInterval" placeholder="10" min="5" max="300" value="10">
+                        <small style="color: #666; font-size: 11px;">建议范围：5-300秒，默认10秒</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="autoStart">开机自启</label>
+                        <div class="switch-container">
+                            <input type="checkbox" id="autoStart" class="switch-input">
+                            <label for="autoStart" class="switch-label">
+                                <span class="switch-slider"></span>
+                            </label>
+                            <span class="switch-text">开机时自动启动应用</span>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="button-group">
+                <button type="button" id="toggleBtn" class="btn btn-primary">开始监控</button>
+                <button type="button" id="aboutBtn" class="btn btn-secondary">关于</button>
+            </div>
+        </div>
+
+        <!-- 日志面板 -->
+        <div class="log-panel">
+            <div class="log-header">
+                <h3>
+                    <span id="statusIndicator" class="status-indicator status-stopped"></span>
+                    运行日志
+                </h3>
+            </div>
+            <div id="logContent" class="log-content">等待日志输出...</div>
+        </div>
+    </div>
+
+    <!-- 关于模态框 -->
+    <div id="aboutModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>关于校园网认证工具</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="about-section">
+                    <h3>📱 应用信息</h3>
+                    <p><strong>名称：</strong>锐捷校园网认证工具</p>
+                    <p><strong>版本：</strong>v1.0.0</p>
+                    <p><strong>描述：</strong>自动化校园网认证，保持网络连接稳定</p>
+                </div>
+
+                <div class="about-section">
+                    <h3>👨‍💻 开发者</h3>
+                    <p><strong>作者：</strong>ZYYO</p>
+                    <p><strong>邮箱：</strong>i@zyyo.net</p>
+                    <p><strong>个人博客：</strong><a href="https://zyyo.net" target="_blank">zyyo.net</a></p>
+                </div>
+
+                <div class="about-section">
+                    <h3>🔗 开源信息</h3>
+                    <p><strong>许可证：</strong>MIT License</p>
+                    <p><strong>源码地址：</strong><a href="https://github.com/ZYYO666/ruijie-electron" target="_blank">GitHub
+                            Repository</a></p>
+                </div>
+
+                <div class="about-section">
+                    <h3>⚡ 技术栈</h3>
+                    <p>Electron • Node.js • HTML5 • CSS3</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { ipcRenderer } = require('electron');
+
+        // DOM 元素
+        const configForm = document.getElementById('configForm');
+        const serverUrlInput = document.getElementById('serverUrl');
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+        const checkIntervalInput = document.getElementById('checkInterval');
+        const autoStartInput = document.getElementById('autoStart');
+        const toggleBtn = document.getElementById('toggleBtn');
+        const logContent = document.getElementById('logContent');
+        const statusIndicator = document.getElementById('statusIndicator');
+        const aboutBtn = document.getElementById('aboutBtn');
+        const aboutModal = document.getElementById('aboutModal');
+        const closeModal = document.querySelector('.close');
+        
+        // 标题栏按钮元素
+        const minimizeBtn = document.getElementById('minimizeBtn');
+        const closeBtn = document.getElementById('closeBtn');
+
+        let isMonitoring = false;
+
+        // 标题栏按钮事件处理
+        minimizeBtn.addEventListener('click', async () => {
+            await ipcRenderer.invoke('minimize-window');
+        });
+
+        closeBtn.addEventListener('click', async () => {
+            await ipcRenderer.invoke('close-window');
+        });
+
+        // 自动保存配置函数
+        async function autoSaveConfig() {
+            // 获取输入值并去除空格
+            const serverUrl = serverUrlInput.value.trim();
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value.trim();
+
+            // 验证检测间隔
+            let checkInterval = parseInt(checkIntervalInput.value) || 10;
+            if (checkInterval < 5) {
+                checkInterval = 5;
+                checkIntervalInput.value = 5;
+            } else if (checkInterval > 300) {
+                checkInterval = 300;
+                checkIntervalInput.value = 300;
+            }
+
+            // 构建配置对象，不包含开机自启设置
+            const config = {
+                serverUrl: serverUrl || '172.16.200.101',
+                username: username,
+                password: password,
+                checkInterval: checkInterval
+            };
+
+            // 保存配置（不包括开机自启设置）
+            await ipcRenderer.invoke('save-config', config);
+
+            // 前端参数验证（仅用于显示错误提示，不影响保存）
+            let hasValidationErrors = false;
+
+            if (!username) {
+                showValidationError('username', '用户名不能为空');
+                hasValidationErrors = true;
+            }
+
+            if (!password) {
+                showValidationError('password', '密码不能为空');
+                hasValidationErrors = true;
+            }
+
+            if (!serverUrl) {
+                showValidationError('serverUrl', '服务器地址不能为空');
+                hasValidationErrors = true;
+            }
+
+            // 如果没有验证错误，清除所有错误提示
+            if (!hasValidationErrors) {
+                clearValidationErrors();
+            }
+        }
+
+        // 显示验证错误提示
+        function showValidationError(fieldId, message) {
+            const field = document.getElementById(fieldId);
+            const formGroup = field.parentElement;
+            
+            // 移除已存在的错误提示
+            const existingError = formGroup.querySelector('.validation-error');
+            if (existingError) {
+                existingError.remove();
+            }
+
+            // 添加错误样式
+            field.style.borderColor = '#ff4444';
+            field.style.backgroundColor = '#2a1a1a';
+
+            // 创建错误提示元素
+            const errorElement = document.createElement('div');
+            errorElement.className = 'validation-error';
+            errorElement.textContent = message;
+            errorElement.style.cssText = `
+                color: #ff4444;
+                font-size: 11px;
+                margin-top: 4px;
+                font-weight: 300;
+            `;
+
+            formGroup.appendChild(errorElement);
+        }
+
+        // 清除验证错误提示
+        function clearValidationErrors() {
+            const errorElements = document.querySelectorAll('.validation-error');
+            errorElements.forEach(element => element.remove());
+
+            // 恢复输入框样式
+            [serverUrlInput, usernameInput, passwordInput].forEach(input => {
+                input.style.borderColor = '#333333';
+                input.style.backgroundColor = '#000000';
+            });
+        }
+
+        // 自动加载配置函数
+        async function autoLoadConfig() {
+            const result = await ipcRenderer.invoke('load-config');
+
+            if (result.success) {
+                serverUrlInput.value = result.config.serverUrl || '';
+                usernameInput.value = result.config.username || '';
+                passwordInput.value = result.config.password || '';
+                checkIntervalInput.value = result.config.checkInterval || 10;
+            }
+
+            // 同步开机自启状态 - 直接从系统获取，不依赖配置文件
+            const autoStartResult = await ipcRenderer.invoke('get-auto-start');
+            if (autoStartResult.success) {
+                autoStartInput.checked = autoStartResult.enabled;
+            } else {
+                // 如果无法获取系统状态，默认为false
+                autoStartInput.checked = false;
+            }
+        }
+
+        // 添加输入事件监听器
+        serverUrlInput.addEventListener('input', () => {
+            // 清除该字段的错误提示
+            clearFieldValidationError('serverUrl');
+            autoSaveConfig();
+        });
+        
+        usernameInput.addEventListener('input', () => {
+            // 清除该字段的错误提示
+            clearFieldValidationError('username');
+            autoSaveConfig();
+        });
+        
+        passwordInput.addEventListener('input', () => {
+            // 清除该字段的错误提示
+            clearFieldValidationError('password');
+            autoSaveConfig();
+        });
+        
+        checkIntervalInput.addEventListener('input', autoSaveConfig);
+
+        // 清除单个字段的验证错误
+        function clearFieldValidationError(fieldId) {
+            const field = document.getElementById(fieldId);
+            const formGroup = field.parentElement;
+            const errorElement = formGroup.querySelector('.validation-error');
+            
+            if (errorElement) {
+                errorElement.remove();
+                field.style.borderColor = '#333333';
+                field.style.backgroundColor = '#000000';
+            }
+        }
+
+        // 开机自启开关事件监听器
+        autoStartInput.addEventListener('change', async () => {
+            const result = await ipcRenderer.invoke('set-auto-start', autoStartInput.checked);
+            if (!result.success) {
+                // 如果设置失败，恢复原状态
+                autoStartInput.checked = !autoStartInput.checked;
+                
+                if (result.needsRestart) {
+                    // 应用正在重启
+                    return;
+                } else if (result.cancelled) {
+                    // 用户取消了操作
+                    return;
+                } else {
+                    console.error('设置开机自启失败:', result.error);
+                    // 显示错误提示
+                    alert(`设置开机自启失败: ${result.error || '未知错误'}`);
+                }
+            } else if (result.warning) {
+                // 显示警告信息
+                alert(result.warning);
+            }
+        });
+
+        // 移除原来的表单提交事件处理器
+        configForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+        });
+
+        // 切换监控状态
+        toggleBtn.addEventListener('click', async () => {
+            if (!isMonitoring) {
+                // 开始监控 - 移除前端验证，让后端处理
+                const result = await ipcRenderer.invoke('start-monitoring');
+                if (result.success) {
+                    isMonitoring = true;
+                    updateStatus(true);
+                    toggleBtn.textContent = '停止监控';
+                    toggleBtn.className = 'btn btn-danger';
+                } else {
+                    // 后端已经显示了系统级对话框，这里只需要记录日志
+                    addLogMessage(`❌ ${result.message}`);
+                }
+            } else {
+                // 停止监控
+                await ipcRenderer.invoke('stop-monitoring');
+                isMonitoring = false;
+                updateStatus(false);
+                toggleBtn.textContent = '开始监控';
+                toggleBtn.className = 'btn btn-primary';
+            }
+        });
+
+        // 监听日志消息
+        ipcRenderer.on('log-message', (event, message) => {
+            addLogMessage(message);
+        });
+
+        // 监听监控状态变化（从托盘或其他地方触发）
+        ipcRenderer.on('monitoring-status-changed', (event, data) => {
+            isMonitoring = data.isMonitoring;
+            updateStatus(data.isMonitoring);
+
+            if (data.isMonitoring) {
+                toggleBtn.textContent = '停止监控';
+                toggleBtn.className = 'btn btn-danger';
+            } else {
+                toggleBtn.textContent = '开始监控';
+                toggleBtn.className = 'btn btn-primary';
+            }
+
+            // 只在有消息时才显示，避免重复日志
+            if (data.message) {
+                addLogMessage(`📡 ${data.message}`);
+            }
+        });
+
+        // 添加日志消息
+        function addLogMessage(message) {
+            // 后端已经添加了时间戳，前端直接显示即可
+            const logLine = `${message}\n`;
+            logContent.textContent += logLine;
+            logContent.scrollTop = logContent.scrollHeight;
+        }
+
+        // 更新状态指示器
+        function updateStatus(running) {
+            const statusIndicator = document.getElementById('statusIndicator');
+
+            if (running) {
+                statusIndicator.className = 'status-indicator status-running';
+            } else {
+                statusIndicator.className = 'status-indicator status-stopped';
+            }
+        }
+
+        // 页面加载时自动加载配置
+        window.addEventListener('DOMContentLoaded', async () => {
+            await autoLoadConfig();
+
+            // 获取运行时数据，同步监控状态
+            const runtimeData = await ipcRenderer.invoke('get-runtime-data');
+            if (runtimeData && runtimeData.isMonitoring) {
+                isMonitoring = true;
+                updateStatus(true);
+                toggleBtn.textContent = '停止监控';
+                toggleBtn.className = 'btn btn-danger';
+            }
+
+            addLogMessage('🚀 校园网认证工具已启动');
+            addLogMessage('💡 提示：可以通过系统托盘图标控制程序运行');
+            addLogMessage('⚙️ 配置会自动保存，无需手动操作');
+        });
+
+        // 关于按钮事件处理
+        aboutBtn.addEventListener('click', () => {
+            aboutModal.style.display = 'block';
+        });
+
+        // 关闭模态框事件处理
+        closeModal.addEventListener('click', () => {
+            aboutModal.style.display = 'none';
+        });
+
+        // 点击模态框外部关闭
+        window.addEventListener('click', (event) => {
+            if (event.target === aboutModal) {
+                aboutModal.style.display = 'none';
+            }
+        });
+
+        // 初始状态
+        // 移除了对不存在按钮的引用
+    </script>
+</body>
+
+</html>
